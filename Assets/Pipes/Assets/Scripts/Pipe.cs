@@ -16,6 +16,7 @@ public class Pipe : MonoBehaviour
 
     private List<GameObject> pipeSegments = new List<GameObject>(); // List to hold all the pipe segments and spheres
     private bool isPaused = false; // Flag to check if the pipe is paused
+    private Vector3 lastDirection = Vector3.forward; // Store the last direction to avoid moving backwards
 
     public delegate void PipeFinished(Pipe pipe); // Delegate for when a pipe is finished
     public event PipeFinished OnPipeFinished; // Event triggered when the pipe is finished
@@ -34,7 +35,7 @@ public class Pipe : MonoBehaviour
     {
         isGenerating = true; // Set the generating flag to true
         Vector3 currentPosition = Vector3.zero; // Starting position of the pipe
-        Vector3 direction = GetRandomDirection(); // Get a random initial direction
+        Vector3 direction = GetRandomForwardDirection(lastDirection); // Get a random initial direction
         int segments = 0; // Counter for the number of segments
         int turns = 0; // Counter for the number of turns
 
@@ -45,7 +46,7 @@ public class Pipe : MonoBehaviour
 
             if (CheckCollision(currentPosition, targetPosition) || !IsWithinBoundary(targetPosition)) // Check if the new segment collides with anything or is out of boundary
             {
-                direction = GetRandomDirection(); // Get a new direction
+                direction = GetRandomForwardDirection(lastDirection); // Get a new direction
                 CreateTurn(ref currentPosition, ref direction); // Create a turn at the current position
                 turns++; // Increment the turn counter
                 segments = 0; // Reset the segment counter after a turn
@@ -54,11 +55,12 @@ public class Pipe : MonoBehaviour
 
             CreateSegment(ref currentPosition, targetPosition); // Create the new segment
             currentPosition = targetPosition; // Update the current position to the target position
+            lastDirection = direction; // Update the last direction
             segments++; // Increment the segment counter
 
             if (segments >= turnFrequency) // Check if it's time to make a turn
             {
-                direction = GetRandomDirection(); // Get a new direction
+                direction = GetRandomForwardDirection(lastDirection); // Get a new direction
                 CreateTurn(ref currentPosition, ref direction); // Create a turn at the current position
                 segments = 0; // Reset the segment counter after a turn
                 turns++; // Increment the turn counter
@@ -71,7 +73,7 @@ public class Pipe : MonoBehaviour
         EndPipe(); // End the pipe when maximum turns are reached
     }
 
-    Vector3 GetRandomDirection()
+    Vector3 GetRandomForwardDirection(Vector3 lastDirection)
     {
         // List of possible directions for the pipe to move
         List<Vector3> directions = new List<Vector3> {
@@ -79,6 +81,9 @@ public class Pipe : MonoBehaviour
             Vector3.left, Vector3.right,
             Vector3.up, Vector3.down
         };
+
+        // Remove the opposite direction of the last movement
+        directions.Remove(-lastDirection);
 
         return directions[Random.Range(0, directions.Count)]; // Return a random direction from the list
     }
@@ -118,7 +123,7 @@ public class Pipe : MonoBehaviour
 
         occupiedPositions.Add(position); // Mark the turn position as occupied
 
-        direction = GetRandomDirection(); // Get a new direction for the next segment
+        direction = GetRandomForwardDirection(lastDirection); // Get a new direction for the next segment
     }
 
     public void SetSpeed(float newSpeed)
