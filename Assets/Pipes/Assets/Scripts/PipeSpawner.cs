@@ -15,7 +15,7 @@ public class PipeSpawner : MonoBehaviour
     private bool paused = false; // Flag to check if the spawner is paused
     private Pipe currentPipe = null; // Reference to the current pipe being generated
 
-    public Vector3 boundarySize = new Vector3(30, 30, 30); // Boundary size for the pipes
+    public Vector3 boundarySize = new Vector3(60, 30, 60); // Boundary size for the pipes
 
     void Start()
     {
@@ -24,30 +24,26 @@ public class PipeSpawner : MonoBehaviour
 
     IEnumerator SpawnPipe()
     {
-        if (!paused)
+        while (!paused)
         {
-            Debug.Log("Spawning a new pipe."); // Debugging log
-            GameObject pipeObj = new GameObject("Pipe"); // Create a new GameObject for the pipe
-            Pipe pipe = pipeObj.AddComponent<Pipe>(); // Add the Pipe component to the GameObject
-            pipe.SetSpeed(pipeSpeed); // Set the speed of the pipe
-            pipe.SetMaxTurns((int)Random.Range(minPipeTurns, maxPipeTurns)); // Set the maximum number of turns for the pipe
-            pipe.pipeColor = Random.ColorHSV(0f, 1f, 0.5f, 1f, 0.5f, 1f); // Set a new random lighter color for the pipe
-            pipe.boundarySize = boundarySize; // Set the boundary size for the pipe
-
-            pipe.OnPipeFinished += OnPipeFinished; // Subscribe to the OnPipeFinished event
-
-            activePipes++; // Increment the active pipes count
-            currentPipe = pipe; // Set the current pipe
-            Debug.Log("Waiting for current pipe to finish."); // Debugging log
-            yield return new WaitUntil(() => !pipe.isGenerating); // Wait until the current pipe finishes generating
-
-            currentPipe = null; // Reset the current pipe
-            Debug.Log("Current pipe finished. Active pipes: " + activePipes); // Debugging log
-            if (activePipes < desiredActivePipeCount)
+            if (currentPipe == null)
             {
-                Debug.Log("Starting new pipe generation."); // Debugging log
-                StartCoroutine(SpawnPipe()); // Spawn new pipes if needed
+                Debug.Log("Spawning a new pipe."); // Debugging log
+                GameObject pipeObj = new GameObject("Pipe"); // Create a new GameObject for the pipe
+                Pipe pipe = pipeObj.AddComponent<Pipe>(); // Add the Pipe component to the GameObject
+                pipe.SetSpeed(pipeSpeed); // Set the speed of the pipe
+                pipe.SetMaxTurns((int)Random.Range(minPipeTurns, maxPipeTurns)); // Set the maximum number of turns for the pipe
+                pipe.pipeColor = Random.ColorHSV(0f, 1f, 0.5f, 1f, 0.5f, 1f); // Set a new random lighter color for the pipe
+                pipe.boundarySize = boundarySize; // Set the boundary size for the pipe
+
+                pipe.OnPipeFinished += OnPipeFinished; // Subscribe to the OnPipeFinished event
+
+                activePipes++; // Increment the active pipes count
+                currentPipe = pipe; // Set the current pipe
+                Debug.Log("Waiting for current pipe to finish."); // Debugging log
             }
+
+            yield return new WaitUntil(() => !currentPipe.isGenerating); // Wait until the current pipe finishes generating
         }
     }
 
@@ -69,8 +65,8 @@ public class PipeSpawner : MonoBehaviour
         pipe.OnPipeFinished -= this.OnPipeFinished; // Unsubscribe from the OnPipeFinished event
 
         activePipes--; // Decrement the active pipes count
-
         finishedPipes.Add(pipe); // Add the finished pipe to the list
+        currentPipe = null; // Clear the reference to the current pipe
 
         if (activePipes < desiredActivePipeCount)
         {
